@@ -2,8 +2,7 @@
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
-import time
-import sys
+from assignment1_custom_msgs.srv import GetAvgVel, ChangeThreshold
 
 def main(args=None):
     rclpy.init(args=args)
@@ -28,6 +27,8 @@ def main(args=None):
             # Create publisher for that specific turtle
             topic_name = f'/{t_input}/cmd_vel'
             publisher = node.create_publisher(Twist, topic_name, 10)
+                    # Create clients to communicate with the services provided by the robot_controller
+            self.cli_thr = self.create_client(ChangeThreshold, 'change_threshold')
             
             # Send "Move" command
             twist_msg = Twist()
@@ -53,6 +54,25 @@ def main(args=None):
 
     node.destroy_node()
     rclpy.shutdown()
-
+def set_threshold(self):
+        try:
+            # Get user input for new distance
+            val = float(input("Enter new Threshold : "))
+            
+            if not self.cli_thr.wait_for_service(1.0):
+                print("Service not available!")
+                return
+            
+            # Prepare the request
+            req = ChangeThreshold.Request()
+            req.new_threshold = val
+            
+            # Send and wait for response
+            future = self.cli_thr.call_async(req)
+            rclpy.spin_until_future_complete(self, future)
+            print(f"--> Threshold updated to {val} successfully!")
+            
+        except ValueError:
+            print("Invalid Number!")
 if __name__ == '__main__':
     main()
